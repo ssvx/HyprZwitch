@@ -1,0 +1,10 @@
+#!/bin/bash
+
+PathSocket="/tmp/swiftpoint.x1.profileswitch"
+
+if [ ! -e "$PathSocket" ]; then
+	echo "Socket not found: $PathSocket"
+	exit 1
+fi
+
+echo -n "$1" | socat - UNIX-CONNECT:"$PathSocket"
