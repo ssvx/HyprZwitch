@@ -1,0 +1,5 @@
+{
+	"default": {"ProfileName": "vx"},
+	"starcitizen.exe": {"ProfileName": "scx"},
+	"bg3.exe": {"ProfileName": "bg3"}
+}

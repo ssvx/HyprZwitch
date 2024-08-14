@@ -1,0 +1,122 @@
+#!/bin/bash
+
+# Script vars (no touch)
+ScriptDir=$(dirname "$0")
+TimerPid=0
+
+# Config vars (do touch)
+DelaySec=0.3
+ConfigFile="$0.json"
+CurFile="/tmp/zwitchd"
+ZwitchCmd="$ScriptDir/zwitch"
+#Display=$(hyprctl -j monitors | jq -r '.[0].name')
+#echo "Display: $Display"
+
+# Save current terminal settings
+SttyBackup=$(stty -g)
+# Disable echoing of control characters (^C)
+stty -echoctl
+
+
+# Check if JSON file exists
+if [ ! -f "$ConfigFile" ]; then
+	echo "$(date --rfc-3339='ns') [zwitchd] JSON file not found: $ConfigFile"
+	exit 1
+fi
+
+# Load Task:JsonProfileString associative array from the JSON file
+declare -A TaskList
+DefaultProfile=""
+
+# Parse the JSON file and populate the associative array
+ConfigFileRead () {
+	TaskList=()
+	echo "$(date --rfc-3339='ns') [zwitchd] loading config"
+	while IFS="=" read -r Key Value; do
+		echo "$(date --rfc-3339='ns') [zwitchd] Read .ProfileName for [$Key] from [$Value]"
+		ProfileName=$(jq -r '.ProfileName' <<<"$Value")
+		[ -z $DefaultProfile ] && DefaultProfile=$ProfileName
+		TaskList["$Key"]=$Value
+		echo "$(date --rfc-3339='ns') [zwitchd] added [$ProfileName] for [$Key]"
+	done < <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" $ConfigFile)
+}
+ConfigFileRead
+
+ConfigTime=$(stat -c %Y "$ConfigFile")
+
+# Check for changes to the json config
+ConfigIsNew () {
+	local NewTime=$(stat -c %Y "$ConfigFile")
+	if [ $ConfigTime != $NewTime ]; then
+		echo "ConfigTime is $ConfigTime, new is $NewTime"
+		ConfigTime=$NewTime
+		return 0
+	fi
+	return 1
+}
+
+# Function to change profile
+ProfileSet () {
+	local ProfileCur=""
+	local TaskName="$1"
+	local ProfileName=""
+	if [ -f "$CurFile" ]; then
+		ProfileCur=$(< "$CurFile")
+		echo "$(date --rfc-3339='ns') [zwitchd] ProfileCur is [$ProfileCur]"
+	fi
+	# Check if configuration file has changed
+	if ConfigIsNew; then
+		ConfigFileRead
+	fi
+	# Check if TaskName exists in TaskList and extract ProfileName
+	if [[ -n ${TaskList["$TaskName"]} ]]; then
+		ProfileName=$(jq -r '.ProfileName' <<<"${TaskList["$TaskName"]}")
+	else
+		ProfileName="$DefaultProfile"
+	fi
+	if [[ -n "$ProfileName" && $ProfileName != $ProfileCur ]]; then
+		echo "$(date --rfc-3339='ns') [zwitchd] Set profile [$ProfileName]"
+		echo "$ProfileName" > "$CurFile"
+		# Use zwitch to change the profile
+		$ZwitchCmd "$ProfileName"
+	else
+		echo "$(date --rfc-3339='ns') [zwitchd] Same profile, skipping..."
+	fi
+}
+
+# used to delay profile changes to compansate rapid task switches
+ProfileCue () {
+	local TaskName="$1"
+	[[ 0 < $TimerPid ]] && kill -0 $TimerPid > /dev/null 2>&1 && kill "$TimerPid"
+	(sleep $DelaySec; ProfileSet "$TaskName") &
+	TimerPid=$!
+}
+
+
+# Initiate current profile
+TaskName=$(hyprctl -j activewindow | jq -r '.class')
+echo "$(date --rfc-3339='ns') [zwitchd] Current window [$TaskName]"
+
+# Initiate current|default profile
+ProfileCue "$TaskName"
+
+# Handle termination / ctrl+c
+CleanUp () {
+	echo "$(date --rfc-3339='ns') [zwitchd] Cleaning up..."
+	[ -f "$CurFile" ] && rm "$CurFile"
+	stty "$SttyBackup"
+	exit 0
+}
+
+# Use trap to call CleanUp when a SIGINT is received
+trap CleanUp SIGINT SIGTERM
+
+# Subscribe to Hyprland socket and process the stream
+socat -u UNIX-CONNECT:$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock - | while read -r line; do
+	echo "$(date --rfc-3339='ns') [hypripc] $line"
+	if [[ "$line" == "activewindow>>"* ]]; then
+		TaskName=$(hyprctl -j activewindow | jq -r '.class')
+		echo "$(date --rfc-3339='ns') [zwitchd] detected class: $TaskName"
+		ProfileCue "$TaskName"
+	fi
+done
