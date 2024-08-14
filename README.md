@@ -4,6 +4,10 @@ Hyprland IPC observer to switch mouse profiles on the Swiftpoint Z series using 
 ## Setup
 Just place the files anywhere and set `zwitch` and `zwitchd` executable (`chmod u+x ...`), then run `zwitchd`.
 
+### Dependencies
+- packages: hyprland inotify-tools
+- [Swiftpoint x1cp](https://support.swiftpoint.com/portal/en/community/topic/x1-control-panel-experimental-linux-version-18-7-2023) (version 3.0.7.2 beta or higher)
+
 ## Todo
 - Extend to match other values from the `hyprctl clients` list, since currently only the window class is supported (was enough for my use cases so far).
 - Add support for workspaces
