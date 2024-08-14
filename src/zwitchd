@@ -8,6 +8,7 @@ TimerPid=0
 DelaySec=0.3
 ConfigFile="$0.json"
 CurFile="/tmp/zwitchd"
+ReloadFile="/tmp/zwitchd-reload"
 ZwitchCmd="$ScriptDir/zwitch"
 #Display=$(hyprctl -j monitors | jq -r '.[0].name')
 #echo "Display: $Display"
@@ -30,6 +31,9 @@ DefaultProfile=""
 
 # Parse the JSON file and populate the associative array
 ConfigFileRead () {
+	# Clean up
+	[ -f "$ReloadFile" ] && rm "$ReloadFile"
+	# Reset task list
 	TaskList=()
 	echo "$(date --rfc-3339='ns') [zwitchd] loading config"
 	while IFS="=" read -r Key Value; do
@@ -39,21 +43,12 @@ ConfigFileRead () {
 		TaskList["$Key"]=$Value
 		echo "$(date --rfc-3339='ns') [zwitchd] added [$ProfileName] for [$Key]"
 	done < <(jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" $ConfigFile)
+	# Check for changes to the config file
+	inotifywait -qe modify "$ConfigFile" > /dev/null && touch "$ReloadFile" &
 }
+
+# Initial configuration
 ConfigFileRead
-
-ConfigTime=$(stat -c %Y "$ConfigFile")
-
-# Check for changes to the json config
-ConfigIsNew () {
-	local NewTime=$(stat -c %Y "$ConfigFile")
-	if [ $ConfigTime != $NewTime ]; then
-		echo "$(date --rfc-3339='ns') [zwitchd] ConfigTime is $ConfigTime, NewTime is $NewTime"
-		ConfigTime=$NewTime
-		return 0
-	fi
-	return 1
-}
 
 # Function to change profile
 ProfileSet () {
@@ -84,10 +79,9 @@ ProfileSet () {
 ProfileCue () {
 	local TaskName="$1"
 	[[ 0 < $TimerPid ]] && kill -0 $TimerPid > /dev/null 2>&1 && kill "$TimerPid"
-	# Check if configuration file has changed
-	if ConfigIsNew; then
-		ConfigFileRead
-	fi
+	# Check if config needs to be reloaded
+	[ -f "$ReloadFile" ] && ConfigFileRead
+	# Schedule profile switch
 	(sleep $DelaySec; ProfileSet "$TaskName") &
 	TimerPid=$!
 }
