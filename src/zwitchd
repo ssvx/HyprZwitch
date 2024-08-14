@@ -48,7 +48,7 @@ ConfigTime=$(stat -c %Y "$ConfigFile")
 ConfigIsNew () {
 	local NewTime=$(stat -c %Y "$ConfigFile")
 	if [ $ConfigTime != $NewTime ]; then
-		echo "ConfigTime is $ConfigTime, new is $NewTime"
+		echo "$(date --rfc-3339='ns') [zwitchd] ConfigTime is $ConfigTime, NewTime is $NewTime"
 		ConfigTime=$NewTime
 		return 0
 	fi
@@ -63,10 +63,6 @@ ProfileSet () {
 	if [ -f "$CurFile" ]; then
 		ProfileCur=$(< "$CurFile")
 		echo "$(date --rfc-3339='ns') [zwitchd] ProfileCur is [$ProfileCur]"
-	fi
-	# Check if configuration file has changed
-	if ConfigIsNew; then
-		ConfigFileRead
 	fi
 	# Check if TaskName exists in TaskList and extract ProfileName
 	if [[ -n ${TaskList["$TaskName"]} ]]; then
@@ -88,6 +84,10 @@ ProfileSet () {
 ProfileCue () {
 	local TaskName="$1"
 	[[ 0 < $TimerPid ]] && kill -0 $TimerPid > /dev/null 2>&1 && kill "$TimerPid"
+	# Check if configuration file has changed
+	if ConfigIsNew; then
+		ConfigFileRead
+	fi
 	(sleep $DelaySec; ProfileSet "$TaskName") &
 	TimerPid=$!
 }
