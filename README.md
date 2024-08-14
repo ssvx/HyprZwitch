@@ -26,4 +26,5 @@ The first item on the profile list is considered to be the default profile (name
 
 ## Links
 - [Hyprland IPC](https://wiki.hyprland.org/IPC/)
-- Thread regarding the [Swiftpoint X1 Control Panel API](https://support.swiftpoint.com/portal/en/community/topic/x1cp-api)
+- [Thread regarding Swiftpoint X1 Control Panel API](https://support.swiftpoint.com/portal/en/community/topic/x1cp-api)
+- [Thread announcement pointing back here](https://support.swiftpoint.com/portal/en/community/topic/hyprzwitch-a-little-script-daemon-for-profile-changes-on-hyprland)
