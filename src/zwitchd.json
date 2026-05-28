@@ -1,5 +1,6 @@
 {
 	"default": {"ProfileName": "vx"},
 	"starcitizen.exe": {"ProfileName": "scx"},
-	"bg3.exe": {"ProfileName": "bg3"}
+	"bg3.exe": {"ProfileName": "bg3"},
+	"kingdomcome.exe": {"ProfileName": "kcd2"}
 }

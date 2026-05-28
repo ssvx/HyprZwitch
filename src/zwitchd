@@ -68,8 +68,10 @@ ProfileSet () {
 	if [[ -n "$ProfileName" && $ProfileName != $ProfileCur ]]; then
 		echo "$(date --rfc-3339='ns') [zwitchd] Set profile [$ProfileName]"
 		echo "$ProfileName" > "$CurFile"
+		# Use zwitch for cheeky vibration beta test
+		$ZwitchCmd "Vibrate 100 50"
 		# Use zwitch to change the profile
-		$ZwitchCmd "$ProfileName"
+		$ZwitchCmd "Profile Set $ProfileName"
 	else
 		echo "$(date --rfc-3339='ns') [zwitchd] Same profile, skipping..."
 	fi
