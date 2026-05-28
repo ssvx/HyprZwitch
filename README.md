@@ -6,7 +6,7 @@ Just place the files anywhere and set `zwitch` and `zwitchd` executable (`chmod 
 
 ### Dependencies
 - packages: hyprland inotify-tools
-- [Swiftpoint x1cp](https://support.swiftpoint.com/portal/en/community/topic/x1-control-panel-experimental-linux-version-18-7-2023) (version 3.0.7.2 beta or higher)
+- [Swiftpoint x1cp](https://support.swiftpoint.com/portal/en/community/topic/x1-control-panel-experimental-linux-version-18-7-2023) (version 3.1.0.0 beta or newer)
 
 ## Todo
 - Extend to match other values from the `hyprctl clients` list, since currently only the window class is supported (was enough for my use cases so far).
@@ -26,5 +26,6 @@ The first item on the profile list is considered to be the default profile (name
 
 ## Links
 - [Hyprland IPC](https://wiki.hyprland.org/IPC/)
+- [x1cp API Documentation](https://support.swiftpoint.com/portal/en/kb/articles/x1-api)
 - [Thread regarding Swiftpoint X1 Control Panel API](https://support.swiftpoint.com/portal/en/community/topic/x1cp-api)
 - [Thread announcement pointing back here](https://support.swiftpoint.com/portal/en/community/topic/hyprzwitch-a-little-script-daemon-for-profile-changes-on-hyprland)
